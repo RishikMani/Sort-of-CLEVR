@@ -1,0 +1,80 @@
+{
+    "questions": [
+		    {
+			    "id": 1,
+			    "question": "What is the shape of the object?"
+			},
+			{
+			    "id": 2,
+			    "question": "What is the color of the object?"
+			},
+			{
+			    "id": 3,
+			    "question": "Is the object on top of the image?"
+			},
+			{
+			    "id": 4,
+			    "question": "Is the object on the bottom of the image?"
+			},
+			{
+			    "id": 5,
+			    "question": "Is the object on the left of the image?"
+			},
+			{
+			    "id": 6,
+			    "question": "Is the object on the right of the image?"
+			},
+			{
+			    "id": 7,
+			    "question": "How many objects have the same shape as of the current object?"
+			},
+			{
+			    "id": 8,
+			    "question": "Are there any objects on top of the current object?"
+			},
+			{
+			    "id": 9,
+			    "question": "Are there any objects on bottom of the current object?"
+			},
+			{
+			    "id": 10,
+			    "question": "Are there any objects on left of the current object?"
+			},
+			{
+			    "id": 11,
+			    "question": "Are there any objects on right of the current object?"
+			},
+			{
+			    "id": 12,
+			    "question": "What is the shape of the farthest object from this object?"
+			},
+			{
+			    "id": 13,
+			    "question": "What is the color of the farthest object from this object?"
+			},
+			{
+			    "id": 14,
+			    "question": "Is the color of the farthest object same as of this object?"
+			},
+			{
+			    "id": 15,
+			    "question": "Are the shapes of the current object and the farthest object similar?"
+			},
+			{
+			    "id": 16,
+			    "question": "What is the shape of the nearest object from current object?"
+			},
+			{
+			    "id": 17,
+			    "question": "What is the color of the nearest object from this object?"
+			},
+			{
+			    "id": 18,
+			    "question": "Is the color of the nearest object same as of this object?"
+			},
+			{
+			    "id": 19,
+			    "question": "Is the shape of the nearest object same as of this object?"
+			}
+		]
+}
