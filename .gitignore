@@ -2,3 +2,4 @@ data/*
 output/*
 train_dir/*
 __pycache__/*
+.idea/*
