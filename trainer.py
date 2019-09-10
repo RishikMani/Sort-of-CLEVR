@@ -16,11 +16,11 @@ from model_rn import Model
 parser = argparse.ArgumentParser()
 
 parser.add_argument('--train_question_h5', type=str,
-                    default='.\\output\\train_questions.h5')
+                    default='./output/train_questions.h5')
 parser.add_argument('--vocab_json', type=str,
-                    default='.\\output\\vocab.json')
+                    default='./output/vocab.json')
 parser.add_argument('--train_images_path', type=str,
-                    default='.\\data\\train\\images')
+                    default='./data/train/images')
 
 parser.add_argument('--img_size', type=int, default=128)
 
@@ -33,7 +33,7 @@ parser.add_argument('--strides', type=int, default=3)
 parser.add_argument('--padding', type=str, default='same')
 
 parser.add_argument('--batch_size', type=int, default=64)
-parser.add_argument('--iterations', type=int, default=100000)
+parser.add_argument('--iterations', type=int, default=1000)
 parser.add_argument('--learning_rate', type=float, default=2.5e-4)
 parser.add_argument('--lr_weight_decay', type=bool, default=False)
 parser.add_argument('--output_save_step', type=int, default=10)
@@ -70,7 +70,7 @@ class Trainer:
 
         # Clears the default graph stack and resets the global default
         # graph.
-        tf.reset_default_graph()
+        tf.compat.v1.reset_default_graph()
         
         # Create the model
         self.model = Model(config)
@@ -78,7 +78,7 @@ class Trainer:
         # Returns and create (if necessary) the global step tensor.
         # global_step refers to the number of batches seen by the graph
         # https://bit.ly/2AAqjs1 offers good explanation for global step
-        self.global_step = tf.train.get_or_create_global_step()
+        self.global_step = tf.compat.v1.train.get_or_create_global_step()
         
         self.learning_rate = config.learning_rate
         if config.lr_weight_decay:
@@ -96,7 +96,7 @@ class Trainer:
             loss=self.model.loss,
             global_step=self.global_step,
             learning_rate=self.learning_rate,
-            optimizer=tf.train.AdamOptimizer(
+            optimizer=tf.compat.v1.train.AdamOptimizer(
                 learning_rate=self.learning_rate
             ),
             clip_gradients=20.0,
@@ -105,28 +105,28 @@ class Trainer:
 
         # Creates an event file in a given directory and add summaries
         # and events to it.
-        self.summary_writer = tf.summary.FileWriter(self.train_dir)
+        self.summary_writer = tf.compat.v1.summary.FileWriter(self.train_dir)
 
-        self.summary_op = tf.summary.merge_all()
+        self.summary_op = tf.compat.v1.summary.merge_all()
         self.plot_summary_op = \
-            tf.summary.merge_all(key='plot_summaries')
+            tf.compat.v1.summary.merge_all(key='plot_summaries')
 
         # two summary scalars to be written to the events
         # these scalars would be shown on the tensorboard
-        self.acc_summary = tf.summary.scalar("training_accuracy",
+        self.acc_summary = tf.compat.v1.summary.scalar("training_accuracy",
                                              self.model.accuracy)
-        self.loss_summary = tf.summary.scalar("training_loss",
+        self.loss_summary = tf.compat.v1.summary.scalar("training_loss",
                                               self.model.loss)
 
         self.checkpoint_secs = 600  # 10 min
 
-        self.session_config = tf.ConfigProto(
+        self.session_config = tf.compat.v1.ConfigProto(
             allow_soft_placement=True,
             gpu_options=tf.GPUOptions(allow_growth=True),
-            device_count={'GPU': 1},
+            device_count={'GPU': 0},
         )
 
-        self.saver = tf.train.Saver(max_to_keep=5)
+        self.saver = tf.compat.v1.train.Saver(max_to_keep=5)
         
     def train(self, questions, answers, images):
         """
@@ -156,11 +156,11 @@ class Trainer:
         )
         
         # Create iterators to iterate over the different batches
-        iterator_img = tf.data.make_initializable_iterator(dataset_img)
-        iterator_ques = tf.data.make_initializable_iterator(
+        iterator_img = tf.compat.v1.data.make_initializable_iterator(dataset_img)
+        iterator_ques = tf.compat.v1.data.make_initializable_iterator(
             dataset_ques
         )
-        iterator_ans = tf.data.make_initializable_iterator(dataset_ans)
+        iterator_ans = tf.compat.v1.data.make_initializable_iterator(dataset_ans)
 
         # Create an operation to get the next batch
         next_image_batch = iterator_img.get_next()
@@ -168,7 +168,7 @@ class Trainer:
         next_answer_batch = iterator_ans.get_next()
 
         with tf.Session(config=self.session_config) as sess:
-            sess.run(tf.global_variables_initializer())
+            sess.run(tf.compat.v1.global_variables_initializer())
             batches = images.shape[0] // self.config.batch_size
             
             log.infov('Training starts')
@@ -238,23 +238,24 @@ class Trainer:
         :return: global step, accuracy, summary, loss, accuracy and
                  loss tensorboard summaries
         """
+
         fetch = [self.global_step, self.model.accuracy, self.summary_op,
                  self.model.loss, self.acc_summary, self.loss_summary,
                  self.optimizer]
-        
+
         try:
             if epoch % self.output_save_step == 0:
                 fetch += [self.plot_summary_op]
         except:
             pass
-        
-        fetch_values = sess.run(
-            fetch, feed_dict={
+
+        fetch_values = sess.run(fetch, feed_dict={
                 self.model.img: images,
                 self.model.ques: questions,
                 self.model.ans: answers
             }
-        )        
+        )
+
         [step, accuracy, summary, loss, acc_summary, loss_summary] = \
             fetch_values[:6]
         
