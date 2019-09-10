@@ -17,8 +17,7 @@ parser = argparse.ArgumentParser()
 
 parser.add_argument('--train_question_h5', type=str,
                     default='./output/train_questions.h5')
-parser.add_argument('--vocab_json', type=str,
-                    default='./output/vocab.json')
+parser.add_argument('--vocab_json', type=str, default='./output/vocab.json')
 parser.add_argument('--train_images_path', type=str,
                     default='./data/train/images')
 
