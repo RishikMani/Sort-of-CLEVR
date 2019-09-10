@@ -1,6 +1,6 @@
 import json
 
-with open('.\\output\\vocab.json', 'r') as f:
+with open('./output/vocab.json', 'r') as f:
     vocab = json.load(f)
 
 
