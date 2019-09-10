@@ -13,9 +13,9 @@ img_size = 128     # image size
 size = 5           # minimum size of the objects
 nb_questions = 10  # no. of questions per image
 
-dirs = '.\\data'
-test_images = '.\\data\\test\\images'
-train_images = '.\\data\\train\\images'
+dirs = './data'
+test_images = './data/test/images'
+train_images = './data/train/images'
 
 # each image will contain 6 objects of 6 different colors
 colors = [
@@ -94,9 +94,9 @@ def build_dataset(dataset_type, count):
 
         # save the images locally either to test or train dataset directory
         if dataset_type == 'test':
-            plt.imsave(test_images + '\\img_' + str(count).zfill(3) + '.jpeg', img / 255)
+            plt.imsave(test_images + '/img_' + str(count).zfill(3) + '.jpeg', img / 255)
         else:
-            plt.imsave(train_images + '\\img_' + str(count).zfill(4) + '.jpeg', img / 255)
+            plt.imsave(train_images + '/img_' + str(count).zfill(4) + '.jpeg', img / 255)
 
     questions = []
     answers = []
@@ -222,11 +222,11 @@ def build_dataset(dataset_type, count):
         answers.append(answer)
 
     if dataset_type == 'test':
-        questions_file = ".\\data\\test\\test_questions.txt"
-        answers_file = ".\\data\\test\\test_answer.txt"
+        questions_file = "./data/test/test_questions.txt"
+        answers_file = "./data/test/test_answer.txt"
     else:
-        questions_file = ".\\data\\train\\train_questions.txt"
-        answers_file = ".\\data\\train\\train_answer.txt"
+        questions_file = "./data/train/train_questions.txt"
+        answers_file = "./data/train/train_answer.txt"
 
     with open(questions_file, 'a') as f:
         for question in questions:
