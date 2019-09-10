@@ -1,5 +1,4 @@
 import tensorflow as tf
-import tfplot
 
 from util import log
 
@@ -20,17 +19,17 @@ class Model:
         self.img = tf.placeholder(
             name='img',
             dtype=tf.float32,
-            shape=[self.batch_size, self.img_size, self.img_size, 3]
+            shape=[self.batch_size * 10, self.img_size, self.img_size, 3]
         )
         self.q = tf.placeholder(
             name='ques',
             dtype=tf.float32,
-            shape=[self.batch_size, self.ques_dim]
+            shape=[self.batch_size * 10, self.ques_dim]
         )
         self.ans = tf.placeholder(
             name='ans',
             dtype=tf.float32,
-            shape=[self.batch_size, self.ans_dim]
+            shape=[self.batch_size * 10, self.ans_dim]
         )
 
         self.loss = tf.Variable(0.0, name='loss')
@@ -44,7 +43,7 @@ class Model:
             with tf.compat.v1.variable_scope(scope) as scope:
                 log.warning(scope.name)
 
-                conv_1 = Conv2D(24, kernel_size=5, strides=3, activation=tf.nn.relu, padding=self.padding, name='conv_1')(image)
+                conv_1 = Conv2D(24, kernel_size=5, strides=3, activation=tf.nn.relu, padding=self.padding, name='conv_1')(img)
                 bn_1 = BatchNormalization(name='bn_1')(conv_1)
                 conv_2 = Conv2D(24, kernel_size=5, strides=3, activation=tf.nn.relu, padding=self.padding, name='conv_2')(bn_1)
                 bn_2 = BatchNormalization(name='bn_2')(conv_2)
@@ -75,7 +74,7 @@ class Model:
 
         logits = C(self.img, self.q, scope='Classifier')
         self.all_preds = tf.nn.softmax(logits)
-        self.loss, self.accuracy = build_loss(logits, self.a)
+        self.loss, self.accuracy = build_loss(logits, self.ans)
 
         tf.compat.v1.summary.scalar("accuracy", self.accuracy)
         tf.compat.v1.summary.scalar("cross_entropy", self.loss)

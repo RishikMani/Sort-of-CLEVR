@@ -9,8 +9,7 @@ from util import log
 
 
 class Model:
-    def __init__(self, config, debug_information=False):
-        self.debug = debug_information
+    def __init__(self, config):
         self.config = config
         self.batch_size = config.batch_size
         self.img_size = config.img_size
@@ -20,20 +19,42 @@ class Model:
         self.padding = config.padding
         self.loss = tf.Variable(0.0, name='loss')
         self.accuracy = tf.Variable(0.0, name='accuracy')
-        self.img = tf.compat.v1.placeholder(shape=[self.batch_size * 10, self.img_size, self.img_size, 3], dtype=tf.float32, name='image')
-        self.ques = tf.compat.v1.placeholder(shape=[self.batch_size * 10, self.ques_dim], dtype=tf.float32, name='question')
-        self.ans = tf.compat.v1.placeholder(shape=[self.batch_size * 10, self.ans_dim], dtype=tf.int16, name='answer')
+        self.img = tf.compat.v1.placeholder(
+            shape=[self.batch_size * 10, self.img_size, self.img_size, 3],
+            dtype=tf.float32,
+            name='image'
+        )
+        self.ques = tf.compat.v1.placeholder(
+            shape=[self.batch_size * 10, self.ques_dim],
+            dtype=tf.float32,
+            name='question'
+        )
+        self.ans = tf.compat.v1.placeholder(
+            shape=[self.batch_size * 10, self.ans_dim],
+            dtype=tf.int16,
+            name='answer'
+        )
         
         self.build()
         
     def build(self):
         def build_loss(logits, labels):
             # Cross-entropy loss
-            loss = tf.nn.softmax_cross_entropy_with_logits_v2(logits=logits, labels=labels)
+            loss = tf.nn.softmax_cross_entropy_with_logits_v2(
+                logits=logits,
+                labels=labels
+            )
 
             # Classification accuracy
-            correct_prediction = tf.equal(tf.math.argmax(logits, 1), tf.math.argmax(labels, 1))
-            accuracy = tf.reduce_mean(tf.cast(correct_prediction, dtype=tf.float32))
+            correct_prediction = tf.equal(
+                tf.math.argmax(logits, 1),
+                tf.math.argmax(labels, 1)
+            )
+            accuracy = tf.reduce_mean(tf.cast(
+                correct_prediction,
+                dtype=tf.float32
+                )
+            )
             
             return tf.reduce_mean(loss), accuracy
             
@@ -45,7 +66,10 @@ class Model:
                 return x
                 
         def concat_coor(o, i, d):
-            coor = tf.tile(tf.expand_dims([float(int(i / d)) / d, (i % d) / d], axis=0), [self.batch_size * 10, 1])
+            coor = tf.tile(
+                tf.expand_dims([float(int(i / d)) / d, (i % d) / d], axis=0),
+                [self.batch_size * 10, 1]
+            )
             o = tf.concat([o, tf.cast(coor, dtype=tf.float32)], axis=1)
             return o
         
@@ -53,7 +77,11 @@ class Model:
             with tf.compat.v1.variable_scope(scope, reuse=reuse) as scope:
                 if not reuse:
                     log.warning(scope.name)
-                g_1 = Dense(256, activation=tf.nn.relu, name='g_1')(tf.concat([o_i, o_j, q], axis=1))
+                g_1 = Dense(256, activation=tf.nn.relu, name='g_1')(tf.concat(
+                    [o_i, o_j, q],
+                    axis=1
+                    )
+                )
                 g_2 = Dense(256, activation=tf.nn.relu, name='g_2')(g_1)
                 g_3 = Dense(256, activation=tf.nn.relu, name='g_3')(g_2)
                 g_4 = Dense(256, activation=tf.nn.relu, name='g_4')(g_3)
@@ -62,13 +90,37 @@ class Model:
         def cnn(image, ques, scope='CONV'):
             with tf.compat.v1.variable_scope(scope) as scope:
                 log.warning(scope)
-                conv_1 = Conv2D(24, kernel_size=5, strides=3, activation=tf.nn.relu, padding=self.padding, name='conv_1')(image)
+                conv_1 = Conv2D(
+                    24,
+                    kernel_size=5,
+                    strides=3,
+                    activation=tf.nn.relu,
+                    padding=self.padding,
+                    name='conv_1')(image)
                 bn_1 = BatchNormalization(name='bn_1')(conv_1)
-                conv_2 = Conv2D(24, kernel_size=5, strides=3, activation=tf.nn.relu, padding=self.padding, name='conv_2')(bn_1)
+                conv_2 = Conv2D(
+                    24,
+                    kernel_size=5,
+                    strides=3,
+                    activation=tf.nn.relu,
+                    padding=self.padding,
+                    name='conv_2')(bn_1)
                 bn_2 = BatchNormalization(name='bn_2')(conv_2)
-                conv_3 = Conv2D(24, kernel_size=5, strides=2, activation=tf.nn.relu, padding=self.padding, name='conv_3')(bn_2)
+                conv_3 = Conv2D(
+                    24,
+                    kernel_size=5,
+                    strides=2,
+                    activation=tf.nn.relu,
+                    padding=self.padding,
+                    name='conv_3')(bn_2)
                 bn_3 = BatchNormalization(name='bn_3')(conv_3)
-                conv_4 = Conv2D(24, kernel_size=5, strides=2, activation=tf.nn.relu, padding=self.padding, name='conv_4')(bn_3)
+                conv_4 = Conv2D(
+                    24,
+                    kernel_size=5,
+                    strides=2,
+                    activation=tf.nn.relu,
+                    padding=self.padding,
+                    name='conv_4')(bn_3)
                 bn_4 = BatchNormalization(name='bn_4')(conv_4)
                 
                 # eq.1 in the paper
