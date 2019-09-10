@@ -7,8 +7,6 @@ from tensorflow.keras.layers import BatchNormalization, concatenate
 
 from util import log
 
-from vqa_util import question2str, answer2str
-
 
 class Model:
     def __init__(self, config, debug_information=False):
@@ -22,9 +20,9 @@ class Model:
         self.padding = config.padding
         self.loss = tf.Variable(0.0, name='loss')
         self.accuracy = tf.Variable(0.0, name='accuracy')
-        self.img = tf.placeholder(shape=[self.batch_size * 10, self.img_size, self.img_size, 3], dtype=tf.float32, name='image')
-        self.ques = tf.placeholder(shape=[self.batch_size * 10, self.ques_dim], dtype=tf.float32, name='question')
-        self.ans = tf.placeholder(shape=[self.batch_size * 10, self.ans_dim], dtype=tf.int16, name='answer')
+        self.img = tf.compat.v1.placeholder(shape=[self.batch_size * 10, self.img_size, self.img_size, 3], dtype=tf.float32, name='image')
+        self.ques = tf.compat.v1.placeholder(shape=[self.batch_size * 10, self.ques_dim], dtype=tf.float32, name='question')
+        self.ans = tf.compat.v1.placeholder(shape=[self.batch_size * 10, self.ans_dim], dtype=tf.int16, name='answer')
         
         self.build()
         
@@ -35,12 +33,12 @@ class Model:
 
             # Classification accuracy
             correct_prediction = tf.equal(tf.math.argmax(logits, 1), tf.math.argmax(labels, 1))
-            accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
+            accuracy = tf.reduce_mean(tf.cast(correct_prediction, dtype=tf.float32))
             
             return tf.reduce_mean(loss), accuracy
             
         def rnn(question, scope='RNN'):
-            with tf.variable_scope(scope) as scope:
+            with tf.compat.v1.variable_scope(scope) as scope:
                 log.warning(scope)
                 x = Embedding(len(self.question_token_to_idx), 300)(question)
                 x = LSTM(128)(x)
@@ -48,11 +46,11 @@ class Model:
                 
         def concat_coor(o, i, d):
             coor = tf.tile(tf.expand_dims([float(int(i / d)) / d, (i % d) / d], axis=0), [self.batch_size * 10, 1])
-            o = tf.concat([o, tf.to_float(coor)], axis=1)
+            o = tf.concat([o, tf.cast(coor, dtype=tf.float32)], axis=1)
             return o
         
         def g_theta(o_i, o_j, q, scope='g_theta', reuse=True):
-            with tf.variable_scope(scope, reuse=reuse) as scope:
+            with tf.compat.v1.variable_scope(scope, reuse=reuse) as scope:
                 if not reuse:
                     log.warning(scope.name)
                 g_1 = Dense(256, activation=tf.nn.relu, name='g_1')(tf.concat([o_i, o_j, q], axis=1))
@@ -62,7 +60,7 @@ class Model:
                 return g_4
                 
         def cnn(image, ques, scope='CONV'):
-            with tf.variable_scope(scope) as scope:
+            with tf.compat.v1.variable_scope(scope) as scope:
                 log.warning(scope)
                 conv_1 = Conv2D(24, kernel_size=5, strides=3, activation=tf.nn.relu, padding=self.padding, name='conv_1')(image)
                 bn_1 = BatchNormalization(name='bn_1')(conv_1)
@@ -95,7 +93,7 @@ class Model:
                 return all_g
                 
         def f_phi(g, scope='f_phi'):
-            with tf.variable_scope(scope) as scope:
+            with tf.compat.v1.variable_scope(scope) as scope:
                 log.warning(scope.name)
                 fc_1 = Dense(256, activation=tf.nn.relu, name='fc_1')(g)
                 fc_2 = Dense(256, activation=tf.nn.relu, name='fc_2')(fc_1)
@@ -108,25 +106,7 @@ class Model:
         logits = f_phi(_cnn, scope='f_phi')
         self.all_preds = tf.nn.softmax(tf.convert_to_tensor(logits))
         self.loss, self.accuracy = build_loss(logits, self.ans)
-        
-        # Add summaries
-        def draw_iqa(img, q, target_a, pred_a):
-            fig, ax = tfplot.subplots(figsize=(6, 6))
-            ax.imshow(img)
-            ax.set_title(question2str(q))
-            ax.set_xlabel(answer2str(target_a)+answer2str(pred_a, 'Predicted'))
-            return fig
-
-        try:
-            tfplot.summary.plot_many('IQA/',
-                                     draw_iqa,
-                                     [self.img, self.ques, self.ans, 
-                                     self.all_preds],
-                                     max_outputs=4,
-                                     collections=["plot_summaries"])
-        except:
-            pass
             
-        tf.summary.scalar("accuracy", self.accuracy)
-        tf.summary.scalar("cross_entropy", self.loss)
+        tf.compat.v1.summary.scalar("accuracy", self.accuracy)
+        tf.compat.v1.summary.scalar("cross_entropy", self.loss)
         log.warning('Successfully loaded the model.')
