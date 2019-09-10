@@ -38,7 +38,8 @@ parser.add_argument('--learning_rate', type=float, default=2.5e-4)
 parser.add_argument('--lr_weight_decay', type=bool, default=False)
 parser.add_argument('--output_save_step', type=int, default=10)
 
-parser.add_argument('--model', type=str, default='rn')
+parser.add_argument('--model', type=str, default='rn',
+                    choices=['rn', 'baseline'])
 parser.add_argument('--checkpoint', default=None)
 
 
@@ -47,6 +48,8 @@ class Trainer:
     def get_model_class(model_name):
         if model_name == 'rn':
             from model_rn import Model
+        elif model_name == 'baseline':
+            from model_baseline import Model
         else:
             raise ValueError(model_name)
         return Model
@@ -114,9 +117,9 @@ class Trainer:
         # two summary scalars to be written to the events
         # these scalars would be shown on the tensorboard
         self.acc_summary = tf.compat.v1.summary.scalar("training_accuracy",
-                                             self.model.accuracy)
+                                                       self.model.accuracy)
         self.loss_summary = tf.compat.v1.summary.scalar("training_loss",
-                                              self.model.loss)
+                                                        self.model.loss)
 
         self.checkpoint_secs = 600  # 10 min
 
@@ -309,7 +312,8 @@ def main(args):
     log.infov('Loading training images...')
     for image in sorted(os.listdir(args.train_images_path)):
         # Images are RGB, so we use cv2.IMREAD_COLOR
-        image = cv2.imread(os.path.join(args.train_images_path, image), cv2.IMREAD_COLOR)
+        image = cv2.imread(os.path.join(args.train_images_path, image),
+                           cv2.IMREAD_COLOR)
         image = image / 255.  # normalize images
         train_images.append(image)
     train_images = np.asarray(train_images)  # convert the list to numpy array
