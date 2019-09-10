@@ -14,8 +14,6 @@ sys.path.insert(0, os.path.abspath('.'))
 # Converts all the tokens from all questions and answers to idx.
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--mode', default='prefix', choices=['chain', 'prefix',
-                                                         'postfix'])
 parser.add_argument('--preprocess_questions_for', default='train', type=str,
                     help='Please provide in the type of dataset for which you'
                          'want to process questions. The allowed datasets are'
@@ -29,9 +27,9 @@ parser.add_argument('--expand_vocab', default=1, type=int,
 parser.add_argument('--unk_threshold', default=1, type=int)
 parser.add_argument('--encode_unk', default=0, type=int)
 parser.add_argument('--output_h5_file', default=None, type=str)
-parser.add_argument('--output_vocab_json', default='.\\output\\vocab.json')
+parser.add_argument('--output_vocab_json', default='./output/vocab.json')
 
-output_dir = '.\\output'
+output_dir = './output'
 
 try:
     os.makedirs(output_dir)
@@ -148,13 +146,13 @@ def main(args):
 if __name__ == '__main__':
     args = parser.parse_args()
     if args.preprocess_questions_for == 'train':
-        args.input_questions = '.\\data\\train\\train_questions.txt'
-        args.input_answers = '.\\data\\train\\train_answer.txt'
-        args.output_h5_file = '.\\output\\train_questions.h5'
+        args.input_questions = './data/train/train_questions.txt'
+        args.input_answers = './data/train/train_answer.txt'
+        args.output_h5_file = './output/train_questions.h5'
     elif args.preprocess_questions_for == 'test':
-        args.input_questions = '.\\data\\test\\test_questions.txt'
-        args.input_answers = '.\\data\\train\\test_answer.txt'
-        args.output_h5_file = '.\\output\\test_questions.h5'
-        args.input_vocab_json = '.\\output\\vocab.json'
+        args.input_questions = './data/test/test_questions.txt'
+        args.input_answers = './data/test/test_answer.txt'
+        args.output_h5_file = './output/test_questions.h5'
+        args.input_vocab_json = './output/vocab.json'
     
     main(args)
