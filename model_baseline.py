@@ -2,9 +2,8 @@ import tensorflow as tf
 
 from util import log
 
-from tensorflow.keras.layers import Embedding, LSTM, Dense
+from tensorflow.keras.layers import Dense, BatchNormalization
 from tensorflow.keras.layers import Dropout, Flatten, Conv2D
-from tensorflow.keras.layers import BatchNormalization, concatenate
 
 
 class Model:
@@ -43,13 +42,21 @@ class Model:
             with tf.compat.v1.variable_scope(scope) as scope:
                 log.warning(scope.name)
 
-                conv_1 = Conv2D(24, kernel_size=5, strides=3, activation=tf.nn.relu, padding=self.padding, name='conv_1')(img)
+                conv_1 = Conv2D(24, kernel_size=5, strides=3,
+                                activation=tf.nn.relu, padding=self.padding,
+                                name='conv_1')(img)
                 bn_1 = BatchNormalization(name='bn_1')(conv_1)
-                conv_2 = Conv2D(24, kernel_size=5, strides=3, activation=tf.nn.relu, padding=self.padding, name='conv_2')(bn_1)
+                conv_2 = Conv2D(24, kernel_size=5, strides=3,
+                                activation=tf.nn.relu, padding=self.padding,
+                                name='conv_2')(bn_1)
                 bn_2 = BatchNormalization(name='bn_2')(conv_2)
-                conv_3 = Conv2D(24, kernel_size=5, strides=2, activation=tf.nn.relu, padding=self.padding, name='conv_3')(bn_2)
+                conv_3 = Conv2D(24, kernel_size=5, strides=2,
+                                activation=tf.nn.relu, padding=self.padding,
+                                name='conv_3')(bn_2)
                 bn_3 = BatchNormalization(name='bn_3')(conv_3)
-                conv_4 = Conv2D(24, kernel_size=5, strides=2, activation=tf.nn.relu, padding=self.padding, name='conv_4')(bn_3)
+                conv_4 = Conv2D(24, kernel_size=5, strides=2,
+                                activation=tf.nn.relu, padding=self.padding,
+                                name='conv_4')(bn_3)
                 bn_4 = BatchNormalization(name='bn_4')(conv_4)
                 flat = Flatten(name='flatten')(bn_4)
                 conv_q = tf.concat([flat, q], axis=1)
@@ -68,7 +75,8 @@ class Model:
             )
 
             # Classification accuracy
-            correct_prediction = tf.equal(tf.math.argmax(logits, 1), tf.math.argmax(labels, 1))
+            correct_prediction = tf.equal(tf.math.argmax(logits, 1),
+                                          tf.math.argmax(labels, 1))
             accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
             return tf.reduce_mean(loss), accuracy
 
