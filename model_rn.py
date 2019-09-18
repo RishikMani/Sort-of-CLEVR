@@ -1,5 +1,4 @@
 import tensorflow as tf
-import tfplot
 
 from tensorflow.keras.layers import Embedding, LSTM, Dense
 from tensorflow.keras.layers import Dropout, Flatten, Conv2D
