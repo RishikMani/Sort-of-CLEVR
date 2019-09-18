@@ -161,11 +161,15 @@ class Trainer:
         )
         
         # Create iterators to iterate over the different batches
-        iterator_img = tf.compat.v1.data.make_initializable_iterator(dataset_img)
+        iterator_img = tf.compat.v1.data.make_initializable_iterator(
+            dataset_img
+        )
         iterator_ques = tf.compat.v1.data.make_initializable_iterator(
             dataset_ques
         )
-        iterator_ans = tf.compat.v1.data.make_initializable_iterator(dataset_ans)
+        iterator_ans = tf.compat.v1.data.make_initializable_iterator(
+            dataset_ans
+        )
 
         # Create an operation to get the next batch
         next_image_batch = iterator_img.get_next()
@@ -190,7 +194,10 @@ class Trainer:
 
                 for batch in range(batches):
                     # batch_images = []
-                    batch_images = sess.run(next_image_batch, feed_dict={img_placeholder: images})
+                    batch_images = sess.run(
+                        next_image_batch,
+                        feed_dict={img_placeholder: images}
+                    )
 
                     # fetch the next image batch
                     # batch_images = sess.run(next_image_batch)
