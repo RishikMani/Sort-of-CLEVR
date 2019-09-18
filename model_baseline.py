@@ -15,20 +15,20 @@ class Model:
         self.ans_dim = config.ans_dim
         self.padding = config.padding
 
-        self.img = tf.placeholder(
+        self.img = tf.compat.v1.placeholder(
             name='img',
             dtype=tf.float32,
-            shape=[self.batch_size * 10, self.img_size, self.img_size, 3]
+            shape=[None, self.img_size, self.img_size, 3]
         )
-        self.q = tf.placeholder(
+        self.ques = tf.compat.v1.placeholder(
             name='ques',
             dtype=tf.float32,
-            shape=[self.batch_size * 10, self.ques_dim]
+            shape=[None, self.ques_dim]
         )
-        self.ans = tf.placeholder(
+        self.ans = tf.compat.v1.placeholder(
             name='ans',
             dtype=tf.float32,
-            shape=[self.batch_size * 10, self.ans_dim]
+            shape=[None, self.ans_dim]
         )
 
         self.loss = tf.Variable(0.0, name='loss')
@@ -59,6 +59,7 @@ class Model:
                                 name='conv_4')(bn_3)
                 bn_4 = BatchNormalization(name='bn_4')(conv_4)
                 flat = Flatten(name='flatten')(bn_4)
+                flat = tf.keras.backend.repeat_elements(flat, 10, axis=0)
                 conv_q = tf.concat([flat, q], axis=1)
                 fc_1 = Dense(256, activation=tf.nn.relu, name='fc_1')(conv_q)
                 fc_2 = Dense(256, activation=tf.nn.relu, name='fc_2')(fc_1)
@@ -80,7 +81,7 @@ class Model:
             accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
             return tf.reduce_mean(loss), accuracy
 
-        logits = C(self.img, self.q, scope='Classifier')
+        logits = C(self.img, self.ques, scope='Classifier')
         self.all_preds = tf.nn.softmax(logits)
         self.loss, self.accuracy = build_loss(logits, self.ans)
 

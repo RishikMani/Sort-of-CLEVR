@@ -20,17 +20,17 @@ class Model:
         self.loss = tf.Variable(0.0, name='loss')
         self.accuracy = tf.Variable(0.0, name='accuracy')
         self.img = tf.compat.v1.placeholder(
-            shape=[self.batch_size * 10, self.img_size, self.img_size, 3],
+            shape=[None, self.img_size, self.img_size, 3],
             dtype=tf.float32,
             name='image'
         )
         self.ques = tf.compat.v1.placeholder(
-            shape=[self.batch_size * 10, self.ques_dim],
+            shape=[None, self.ques_dim],
             dtype=tf.float32,
             name='question'
         )
         self.ans = tf.compat.v1.placeholder(
-            shape=[self.batch_size * 10, self.ans_dim],
+            shape=[None, self.ans_dim],
             dtype=tf.int16,
             name='answer'
         )
@@ -132,7 +132,7 @@ class Model:
                     o_i = bn_4[:, int(i / d), int(i % d), :]
                     o_i = concat_coor(o_i, i, d)
                     for j in range(d*d):
-                        o_j = conv_4[:, int(j / d), int(j % d), :]
+                        o_j = bn_4[:, int(j / d), int(j % d), :]
                         o_j = concat_coor(o_j, j, d)
                         if i == 0 and j == 0:
                             g_i_j = g_theta(o_i, o_j, ques, reuse=False)
