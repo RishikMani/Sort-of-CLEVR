@@ -32,12 +32,12 @@ parser.add_argument('--strides', type=int, default=3)
 parser.add_argument('--padding', type=str, default='same')
 
 parser.add_argument('--batch_size', type=int, default=64)
-parser.add_argument('--iterations', type=int, default=1000)
+parser.add_argument('--iterations', type=int, default=100000)
 parser.add_argument('--learning_rate', type=float, default=2.5e-4)
 parser.add_argument('--lr_weight_decay', type=bool, default=False)
-parser.add_argument('--output_save_step', type=int, default=10)
+parser.add_argument('--output_save_step', type=int, default=50)
 
-parser.add_argument('--model', type=str, default='rn',
+parser.add_argument('--model', type=str, default='baseline',
                     choices=['rn', 'baseline'])
 parser.add_argument('--checkpoint', default=None)
 
@@ -124,11 +124,11 @@ class Trainer:
 
         self.session_config = tf.compat.v1.ConfigProto(
             allow_soft_placement=True,
-            gpu_options=tf.GPUOptions(allow_growth=True),
+            gpu_options=tf.compat.v1.GPUOptions(allow_growth=True),
             device_count={'GPU': 0},
         )
 
-        self.saver = tf.compat.v1.train.Saver(max_to_keep=5)
+        self.saver = tf.compat.v1.train.Saver(max_to_keep=2)
         
     def train(self, questions, answers, images):
         """
@@ -138,16 +138,19 @@ class Trainer:
         :param images: training images
         :return:
         """
-        # img_placeholder = tf.placeholder(dtype=tf.float32, shape=[images.shape[0], 128, 128, 3])
-        # img = tf.get_variable('img', [images.shape[0], 128, 128, 3])
-        # img.assign(img_placeholder)
+        img_placeholder = tf.compat.v1.placeholder(
+            dtype=tf.float32,
+            shape=[images.shape[0], 128, 128, 3]
+        )
+        img = tf.compat.v1.get_variable('img', [images.shape[0], 128, 128, 3])
+        img.assign(img_placeholder)
 
         # Create dataset tensor slices
         # Remember that for every image we have 10 questions and
         # thus 10 answers. For every image we need to load 10 questions
         # and 10 answers respectively.
         # dataset_img = Dataset.from_tensor_slices((img)).batch(self.config.batch_size)
-        dataset_img = Dataset.from_tensor_slices((images)).batch(
+        dataset_img = Dataset.from_tensor_slices((img)).batch(
             self.config.batch_size
         )
         dataset_ques = Dataset.from_tensor_slices((questions)).batch(
@@ -169,7 +172,9 @@ class Trainer:
         next_question_batch = iterator_ques.get_next()
         next_answer_batch = iterator_ans.get_next()
 
-        with tf.Session(config=self.session_config) as sess:
+        step = None
+
+        with tf.compat.v1.Session(config=self.session_config) as sess:
             sess.run(tf.compat.v1.global_variables_initializer())
             batches = images.shape[0] // self.config.batch_size
             
@@ -184,19 +189,19 @@ class Trainer:
                 sess.run(iterator_ans.initializer)
 
                 for batch in range(batches):
-                    batch_images = []
-                    # epoch_img = sess.run(next_image_batch, feed_dict={img_placeholder: train_images})
+                    # batch_images = []
+                    batch_images = sess.run(next_image_batch, feed_dict={img_placeholder: images})
 
                     # fetch the next image batch
-                    img = sess.run(next_image_batch)
+                    # batch_images = sess.run(next_image_batch)
                     
                     # Copy each image 10 times. Thus the batch to train
                     # would have same size at dimension 0
-                    for j in range(img.shape[0]):
-                        for _ in range(10):
-                            batch_images.append(img[j])
+                    # for j in range(img.shape[0]):
+                    #    for _ in range(10):
+                    #        batch_images.append(img[j])
 
-                    batch_images = np.asarray(batch_images)
+                    # batch_images = np.asarray(batch_images)
                     batch_ques = sess.run(next_question_batch)
                     batch_ans = sess.run(next_answer_batch)
                     batch_ans = to_categorical(
