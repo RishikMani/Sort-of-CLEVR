@@ -19,12 +19,12 @@ train_images = './data/train/images'
 
 # each image will contain 6 objects of 6 different colors
 colors = [
-    (0,0,255),      # red
-    (0,255,0),      # green
-    (255,0,0),      # blue
-    (0,156,255),    # orange
-    (128,128,128),  # gray
-    (0,255,255)     # yellow
+    (0, 0, 255),      # red
+    (0, 255, 0),      # green
+    (255, 0, 0),      # blue
+    (0, 156, 255),    # orange
+    (128, 128, 128),  # gray
+    (0, 255, 255)     # yellow
 ]
 
 colors_code = ['red', 'green', 'blue', 'orange', 'gray', 'yellow']
