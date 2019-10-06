@@ -54,3 +54,5 @@ Or generate your own Sort-of-CLEVR dataset by specifying args:
 ```bash
 $ python generator.py --train_size 12345 --img_size 256
 ```
+
+\*This code is still being developed and subject to change. The README.md will further be edited to include few more details.
