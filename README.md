@@ -8,7 +8,7 @@ This project includes a [Tensorflow](https://www.tensorflow.org/) implementation
 
 Relational reasoning is an essential component of intelligent systems. To this end, Relation Networks (RNs) are proposed to solve problems hinging on inherently relational concepts. To be more specific, RN is a composite function:
 
-![](figure/rn_eq.png)
+![Equation](figure/rn_eq.png)
 
 <p align="center">
     <img src="figure/rn_eq.png" height="72" />
