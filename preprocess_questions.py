@@ -17,7 +17,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--preprocess_questions_for', default='train', type=str,
                     help='Please provide in the type of dataset for which you'
                          'want to process questions. The allowed datasets are'
-                         'train, val and test.')
+                         'train and test.')
 parser.add_argument('--input_questions', default=None, type=str)
 parser.add_argument('--input_vocab_json', default='')
 parser.add_argument('--expand_vocab', default=1, type=int,
