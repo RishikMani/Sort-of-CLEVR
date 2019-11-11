@@ -2,14 +2,13 @@ import cv2
 import os
 import numpy as np
 import random
-import pickle
 import json
 import math
 import matplotlib.pyplot as plt
 
-train_size = 9800  # size of the traning dataset
-test_size = 200    # size of the testing dataset
-img_size = 128     # image size
+train_size = 980  # size of the training dataset
+test_size = 20    # size of the testing dataset
+img_size = 75      # image size
 size = 5           # minimum size of the objects
 nb_questions = 10  # no. of questions per image
 
@@ -45,6 +44,7 @@ try:
 except:
     print('directory {} already exists'.format(train_images))
 
+
 def center_generate(objects):
     while True:
         pas = True
@@ -56,6 +56,7 @@ def center_generate(objects):
         if pas:
             return center
 
+
 def build_dataset(dataset_type, count):
     """
     Method to create dataset for training and testing
@@ -65,7 +66,7 @@ def build_dataset(dataset_type, count):
     :return:
     """
     objects = []  # list to contain all objects in the image
-    img = np.ones((img_size, img_size, 3)) * 255
+    img = np.zeros((img_size, img_size, 3))
 
     nr_circles = 0  # no of circles in the image
     nr_rectangles = 0  # no of rectangles in the image
@@ -94,9 +95,11 @@ def build_dataset(dataset_type, count):
 
         # save the images locally either to test or train dataset directory
         if dataset_type == 'test':
-            plt.imsave(test_images + '/img_' + str(count).zfill(3) + '.jpeg', img / 255)
+            plt.imsave(test_images + '/img_' + str(count).zfill(3) + '.jpeg',
+                       img / 255)
         else:
-            plt.imsave(train_images + '/img_' + str(count).zfill(4) + '.jpeg', img / 255)
+            plt.imsave(train_images + '/img_' + str(count).zfill(4) + '.jpeg',
+                       img / 255)
 
     questions = []
     answers = []
@@ -192,7 +195,8 @@ def build_dataset(dataset_type, count):
                     elif question['id'] == 13:
                         answer = colors_code[object[0]]
                     elif question['id'] == 14:
-                        answer = (colors_code[objects[color][0]] == colors_code[object[0]])
+                        answer = (colors_code[objects[color][0]] == \
+                                  colors_code[object[0]])
                     else:
                         answer = (objects[color][2] == object[2])
 
@@ -204,7 +208,8 @@ def build_dataset(dataset_type, count):
             min_distance = 100000
             for object in objects:
                 distance = math.sqrt(
-                    (object[1][0] - objects[color][1][0]) ** 2 + (object[1][1] - objects[color][1][1]) ** 2
+                    (object[1][0] - objects[color][1][0]) ** 2 + \
+                    (object[1][1] - objects[color][1][1]) ** 2
                 )
 
                 if distance < min_distance:
@@ -214,7 +219,8 @@ def build_dataset(dataset_type, count):
                     elif question['id'] == 17:
                         answer = colors_code[object[0]]
                     elif question['id'] == 18:
-                        answer = (colors_code[objects[color][0]] == colors_code[object[0]])
+                        answer = (colors_code[objects[color][0]] == \
+                                  colors_code[object[0]])
                     else:
                         answer = (objects[color][2] == object[2])
 
@@ -237,6 +243,7 @@ def build_dataset(dataset_type, count):
         for answer in answers:
             f.write(str(answer))
             f.write('\n')
+
 
 print('building testing dataset...')
 for count in range(test_size):
