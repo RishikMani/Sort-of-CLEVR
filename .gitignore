@@ -3,3 +3,6 @@ output/*
 train_dir/*
 __pycache__/*
 .idea/*
+old/*
+.gitignore
+.git/*
