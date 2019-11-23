@@ -1,4 +1,5 @@
 import os
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import json
 import cv2
 import numpy as np
@@ -9,9 +10,11 @@ import tensorflow as tf
 
 from tensorflow.data import Dataset
 from tensorflow.keras.utils import to_categorical
+from tensorflow.core.protobuf import rewriter_config_pb2
 
 from util import log
-from model_rn import Model
+
+tf.keras.backend.clear_session()
 
 parser = argparse.ArgumentParser()
 
@@ -21,7 +24,7 @@ parser.add_argument('--vocab_json', type=str, default='./output/vocab.json')
 parser.add_argument('--train_images_path', type=str,
                     default='./data/train/images')
 
-parser.add_argument('--img_size', type=int, default=128)
+parser.add_argument('--img_size', type=int, default=75)
 
 parser.add_argument('--rnn_wordvec_dim', type=int, default=300)
 parser.add_argument('--rnn_hidden_dim', type=int, default=128)
@@ -32,12 +35,12 @@ parser.add_argument('--strides', type=int, default=3)
 parser.add_argument('--padding', type=str, default='same')
 
 parser.add_argument('--batch_size', type=int, default=64)
-parser.add_argument('--iterations', type=int, default=100000)
-parser.add_argument('--learning_rate', type=float, default=2.5e-4)
+parser.add_argument('--iterations', type=int, default=500)
+parser.add_argument('--learning_rate', type=float, default=1e-4)
 parser.add_argument('--lr_weight_decay', type=bool, default=False)
 parser.add_argument('--output_save_step', type=int, default=50)
 
-parser.add_argument('--model', type=str, default='baseline',
+parser.add_argument('--model', type=str, default='rn',
                     choices=['rn', 'baseline'])
 parser.add_argument('--checkpoint', default=None)
 
@@ -57,12 +60,9 @@ class Trainer:
         self.config = config
         self.iterations = config.iterations
         self.output_save_step = config.output_save_step
-        
-        # hyper_parameter_str = 'Sort-of-CLEVR' + '_lr_' + str(config.learning_rate)
-        hyper_parameter_str = 'Sort-of-CLEVR'
-        self.train_dir = './train_dir/%s-%s-%s' % (
+
+        self.train_dir = './train_dir/%s-%s' % (
             config.model,
-            hyper_parameter_str,
             time.strftime("%Y%m%d-%H%M%S")
         )
         if not os.path.exists(self.train_dir):
@@ -73,7 +73,8 @@ class Trainer:
         # Clears the default graph stack and resets the global default
         # graph.
         tf.compat.v1.reset_default_graph()
-        
+
+        Model = self.get_model_class(config.model)
         # Create the model
         self.model = Model(config)
         
@@ -92,43 +93,31 @@ class Trainer:
                 staircase=True,
                 name='decaying_learning_rate'
             )
-
+        
         # Optimizer
         self.optimizer = tf.contrib.layers.optimize_loss(
             loss=self.model.loss,
             global_step=self.global_step,
             learning_rate=self.learning_rate,
-            optimizer=tf.compat.v1.train.AdamOptimizer(
-                learning_rate=self.learning_rate
-            ),
+            optimizer=tf.compat.v1.train.AdamOptimizer,
             clip_gradients=20.0,
             name='optimizer_loss'
         )
-
-        # Creates an event file in a given directory and add summaries
-        # and events to it.
-        self.summary_writer = tf.compat.v1.summary.FileWriter(self.train_dir)
-
+        
         self.summary_op = tf.compat.v1.summary.merge_all()
-        self.plot_summary_op = \
-            tf.compat.v1.summary.merge_all(key='plot_summaries')
-
-        # two summary scalars to be written to the events
-        # these scalars would be shown on the tensorboard
-        self.acc_summary = tf.compat.v1.summary.scalar("training_accuracy",
-                                                       self.model.accuracy)
-        self.loss_summary = tf.compat.v1.summary.scalar("training_loss",
-                                                        self.model.loss)
-
-        self.checkpoint_secs = 600  # 10 min
+        try:
+            import tfplot
+            self.plot_summary_op = tf.compat.v1.summary.merge_all(tf.get_collection(key='plot_summaries'))
+        except:
+            pass
 
         self.session_config = tf.compat.v1.ConfigProto(
             allow_soft_placement=True,
             gpu_options=tf.compat.v1.GPUOptions(allow_growth=True),
-            device_count={'GPU': 0},
+            device_count={'GPU': 1},
         )
-
-        self.saver = tf.compat.v1.train.Saver(max_to_keep=2)
+        off = rewriter_config_pb2.RewriterConfig.OFF
+        self.session_config.graph_options.rewrite_options.arithmetic_optimization = off
         
     def train(self, questions, answers, images):
         """
@@ -138,19 +127,16 @@ class Trainer:
         :param images: training images
         :return:
         """
-        img_placeholder = tf.compat.v1.placeholder(
-            dtype=tf.float32,
-            shape=[images.shape[0], 128, 128, 3]
-        )
-        img = tf.compat.v1.get_variable('img', [images.shape[0], 128, 128, 3])
+        img_placeholder = tf.compat.v1.placeholder(dtype=tf.float32,
+                                                   shape=[images.shape[0], 75, 75, 3])
+        img = tf.compat.v1.get_variable('img_assign', [images.shape[0], 75, 75, 3])
         img.assign(img_placeholder)
 
         # Create dataset tensor slices
         # Remember that for every image we have 10 questions and
         # thus 10 answers. For every image we need to load 10 questions
         # and 10 answers respectively.
-        # dataset_img = Dataset.from_tensor_slices((img)).batch(self.config.batch_size)
-        dataset_img = Dataset.from_tensor_slices((img)).batch(
+        dataset_img = Dataset.from_tensor_slices((images)).batch(
             self.config.batch_size
         )
         dataset_ques = Dataset.from_tensor_slices((questions)).batch(
@@ -161,29 +147,27 @@ class Trainer:
         )
         
         # Create iterators to iterate over the different batches
-        iterator_img = tf.compat.v1.data.make_initializable_iterator(
-            dataset_img
-        )
+        iterator_img = tf.compat.v1.data.make_initializable_iterator(dataset_img)
         iterator_ques = tf.compat.v1.data.make_initializable_iterator(
             dataset_ques
         )
-        iterator_ans = tf.compat.v1.data.make_initializable_iterator(
-            dataset_ans
-        )
+        iterator_ans = tf.compat.v1.data.make_initializable_iterator(dataset_ans)
 
         # Create an operation to get the next batch
         next_image_batch = iterator_img.get_next()
         next_question_batch = iterator_ques.get_next()
         next_answer_batch = iterator_ans.get_next()
 
-        step = None
-
         with tf.compat.v1.Session(config=self.session_config) as sess:
             sess.run(tf.compat.v1.global_variables_initializer())
-            batches = images.shape[0] // self.config.batch_size
-            
-            log.infov('Training starts')
 
+            # Creates an event file in a given directory and add summaries
+            # and events to it.
+            self.summary_writer = tf.compat.v1.summary.FileWriter(self.train_dir)
+            saver = tf.compat.v1.train.Saver(max_to_keep=1)
+
+            batches = images.shape[0] // self.config.batch_size
+            log.infov('Training starts')
             for epoch in range(self.iterations):
                 log.warning('Epoch {} started'.format(epoch))
 
@@ -193,22 +177,14 @@ class Trainer:
                 sess.run(iterator_ans.initializer)
 
                 for batch in range(batches):
-                    # batch_images = []
-                    batch_images = sess.run(
+                    batch_images = []
+                    batch_img = sess.run(
                         next_image_batch,
                         feed_dict={img_placeholder: images}
                     )
-
-                    # fetch the next image batch
-                    # batch_images = sess.run(next_image_batch)
-                    
-                    # Copy each image 10 times. Thus the batch to train
-                    # would have same size at dimension 0
-                    # for j in range(img.shape[0]):
-                    #    for _ in range(10):
-                    #        batch_images.append(img[j])
-
-                    # batch_images = np.asarray(batch_images)
+                    for j in range(batch_img.shape[0]):
+                        for _ in range(10):
+                            batch_images.append(batch_img[j])
                     batch_ques = sess.run(next_question_batch)
                     batch_ans = sess.run(next_answer_batch)
                     batch_ans = to_categorical(
@@ -217,30 +193,28 @@ class Trainer:
                         dtype=int
                     )
                     
-                    step, acc, summary, loss, acc_summary, loss_summary =\
+                    step, acc, loss, summary =\
                         self.run_single_epoch(
                             sess,
                             batch_images,
+                            # batch_img,
                             batch_ques,
                             batch_ans,
-                            epoch=epoch
+                            epoch
                         )
 
-                    # Add the different summaries to the graph
-                    self.summary_writer.add_summary(acc_summary, epoch)
-                    self.summary_writer.add_summary(loss_summary, epoch)
-
-                    if step % 10 == 0:
+                    if batch % 10 == 0:
                         self.log_step_message(step, acc, loss)
+                    self.summary_writer.add_summary(summary, global_step=epoch)
 
-                if epoch % self.output_save_step == 0:
+                if epoch % (self.output_save_step -1) == 0 or epoch % 499 == 0:
                     log.infov("Saved checkpoint at %s", self.train_dir)
-                    save_path = self.saver.save(
+                    save_path = saver.save(
                         sess,
                         os.path.join(self.train_dir, 'model'),
                         global_step=step)
                     
-    def run_single_epoch(self, sess, images, questions, answers, epoch):
+    def run_single_epoch(self, sess, images, questions, answers, step):
         """
         Function to run on every epoch to calculate certain values
 
@@ -253,12 +227,11 @@ class Trainer:
                  loss tensorboard summaries
         """
 
-        fetch = [self.global_step, self.model.accuracy, self.summary_op,
-                 self.model.loss, self.acc_summary, self.loss_summary,
-                 self.optimizer]
-
+        fetch = [self.global_step, self.model.accuracy, self.model.loss,
+                 self.summary_op, self.optimizer]
+        
         try:
-            if epoch % self.output_save_step == 0:
+            if step is not None and (step % 3 == 0):
                 fetch += [self.plot_summary_op]
         except:
             pass
@@ -270,8 +243,8 @@ class Trainer:
             }
         )
 
-        [step, accuracy, summary, loss, acc_summary, loss_summary] = \
-            fetch_values[:6]
+        [step, accuracy, loss, summary] = \
+            fetch_values[:4]
         
         try:
             if self.plot_summary_op in fetch:
@@ -279,7 +252,7 @@ class Trainer:
         except:
             pass
             
-        return step, accuracy, summary, loss, acc_summary, loss_summary
+        return step, accuracy, loss, summary
         
     def log_step_message(self, step, accuracy, loss):
         """
