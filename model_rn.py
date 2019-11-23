@@ -1,8 +1,7 @@
 import tensorflow as tf
 
 from tensorflow.keras.layers import Embedding, LSTM, Dense
-from tensorflow.keras.layers import Dropout, Flatten, Conv2D
-from tensorflow.keras.layers import BatchNormalization, concatenate
+from tensorflow.keras.layers import Dropout, Conv2D, BatchNormalization
 
 from util import log
 
