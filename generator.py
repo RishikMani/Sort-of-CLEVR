@@ -4,11 +4,10 @@ import numpy as np
 import random
 import json
 import math
-import matplotlib.pyplot as plt
 
-train_size = 980  # size of the training dataset
-test_size = 20    # size of the testing dataset
-img_size = 75      # image size
+train_size = 9800  # size of the training dataset
+test_size = 200    # size of the testing dataset
+img_size = 75     # image size
 size = 5           # minimum size of the objects
 nb_questions = 10  # no. of questions per image
 
@@ -83,23 +82,23 @@ def build_dataset(dataset_type, count):
             start = (center[0] - size, center[1] - size)  # start vertex
             end = (center[0] + size, center[1] + size)    # end vertex
 
-            img = cv2.rectangle(img, start, end, color, -1)
+            cv2.rectangle(img, start, end, color, -1)
+            # cv2.imshow('image.jpg', img)
             objects.append((color_id, center, 'rectangle'))
 
             nr_rectangles += 1
         else:
             center_ = (center[0], center[1])
-            img = cv2.circle(img, center_, size, color, -1)
+            cv2.circle(img, center_, size, color, -1)
+            # cv2.imshow('image.jpg', img)
             objects.append((color_id, center, 'circle'))
             nr_circles += 1
 
         # save the images locally either to test or train dataset directory
         if dataset_type == 'test':
-            plt.imsave(test_images + '/img_' + str(count).zfill(3) + '.jpeg',
-                       img / 255)
+            cv2.imwrite(test_images + '/img_' + str(count).zfill(2) + '.jpeg', img)
         else:
-            plt.imsave(train_images + '/img_' + str(count).zfill(4) + '.jpeg',
-                       img / 255)
+            cv2.imwrite(train_images + '/img_' + str(count).zfill(2) + '.jpeg', img)
 
     questions = []
     answers = []
@@ -108,7 +107,7 @@ def build_dataset(dataset_type, count):
     # randomly choose any 10 questions from the questions list
     with open('questions.json') as json_file:
         data = json.load(json_file)
-        chosen_questions = random.choices(data["questions"], k=10)
+        chosen_questions = random.sample(data["questions"], k=10)
 
     for question in chosen_questions:
         # choose a random color
@@ -116,113 +115,172 @@ def build_dataset(dataset_type, count):
         # the questions would then be asked for that specific object
         color = random.randint(0, 5)
 
-        # What is the shape of the object?
+        # What is the shape of the <C> colored object?
         if question['id'] == 1:
+            question["question"] = question["question"].replace("<C>", colors_code[color])
             answer = objects[color][2]
 
-        # What is the color of the object?
+        # Is the <C> colored object on top of the image?
         if question['id'] == 2:
-            answer = colors_code[objects[color][0]]
+            question["question"] = question["question"].replace("<C>", colors_code[color])
+            if objects[color][1][1] < (img_size / 2):
+                answer = True
+            else:
+                answer = False
 
-        # Is the object on top of the image?
+        # Is the <C> colored object on bottom of the image?
         if question['id'] == 3:
-            answer = objects[color][1][1]  > (img_size / 2)
+            question["question"] = question["question"].replace("<C>", colors_code[color])
+            if objects[color][1][1] > (img_size / 2):
+                answer = True
+            else:
+                answer = False
 
-        # Is the object on the bottom of the image?
+        # Is the <C> colored object on left of the image?
         if question['id'] == 4:
-            answer = objects[color][1][1] < (img_size / 2)
+            question["question"] = question["question"].replace("<C>", colors_code[color])
+            if objects[color][1][0] < (img_size / 2):
+                answer = True
+            else:
+                answer = False
 
-        # Is the object on the left of the image?
+        # Is the <C> colored object on right of the image?
         if question['id'] == 5:
-            answer = objects[color][1][0] < (img_size / 2)
+            question["question"] = question["question"].replace("<C>", colors_code[color])
+            if objects[color][1][0] > (img_size / 2):
+                answer = True
+            else:
+                answer = False
 
-        # Is the object on the right of the image?
+        # How many objects have similar shape as of the <C> colored object?
         if question['id'] == 6:
-            answer = objects[color][1][0] > (img_size / 2)
-
-        # How many objects have the same shape as of the current object?
-        if question['id'] == 7:
+            question["question"] = question["question"].replace("<C>", colors_code[color])
             if objects[color][2] == "circle":
                 answer = nr_circles
             else:
                 answer = nr_rectangles
 
-        # Are there any objects on top of the current object?
-        if question['id'] == 8:
-            for object in objects:
-                if object[1][1] > objects[color][1][1]:
-                    answer = True
-                    break
+        # Are there more than one object of similar shape as of <C> colored object?
+        if question["id"] == 7:
+            question["question"] = question["question"].replace("<C>", colors_code[color])
+            if objects[color][2] == "circle" and nr_circles > 1:
+                answer = True
+            elif objects[color][2] == "rectangle" and nr_rectangles > 1:
+                answer = True
+            else:
+                answer = False
 
-        # Are there any objects on bottom of the current object?
-        if question['id'] == 9:
-            for object in objects:
-                if object[1][1] < objects[color][1][1]:
-                    answer = True
-                    break
+        # Are there more than one square in the image?
+        if question["id"] == 8:
+            if nr_rectangles > 1:
+                answer = True
+            else:
+                answer = False
 
-        # Are there any objects on the left of the current object?
-        if question['id'] == 10:
-            for object in objects:
-                if object[1][0] < objects[color][1][0]:
-                    answer = True
-                    break
+        # Are there more than one circle in the image?
+        if question["id"] == 9:
+            if nr_circles > 1:
+                answer = True
+            else:
+                answer = False
 
-        # Are there any objects on right of the current object?
-        if question['id'] == 11:
-            for object in objects:
-                if object[1][0] > objects[color][1][0]:
-                    answer = True
-                    break
+        # How many squares are there in the image?
+        if question["id"] == 10:
+            answer = nr_rectangles
 
-        # What is the shape of the farthest object from this object?
-        # What is the color of the farthest object from this object?
-        # Is the color of the farthest object same as of this object?
-        # Are shapes of the current object and the farthest object similar?
-        if question['id'] in (12, 13, 14, 15):
+        # How many circles are there in the image?
+        if question["id"] == 11:
+            answer = nr_circles
+
+        # What is the color of the nearest object from <C> colored object?
+        # What is the shape of the nearest object from <C> colored object?
+        # Is the shape of the nearest object similar to the <C> colored object?
+        if question["id"] in (12, 14, 16):
+            question["question"] = question["question"].replace("<C>", colors_code[color])
+            
+            min_distance=100000
+            for _object in objects:
+                distance = math.sqrt(
+                    (_object[1][0] - objects[color][1][0]) ** 2 + \
+                    (_object[1][1] - objects[color][1][1]) ** 2
+                )
+                
+                if distance < min_distance and distance != 0:
+                    min_distance = distance
+                    if question["id"] == 12:
+                        answer = colors_code[_object[0]]
+                        
+                    if question["id"] == 14:
+                        answer = _object[2]
+
+                    if question["id"] == 16:
+                        if _object[2] == objects[color][2]:
+                            answer = True
+                        else:
+                            answer = False
+
+        # What is the color of the farthest object from <C> colored object?
+        # What is the shape of the farthest object from <C> colored object?
+        # Is the shape of the farthest object similar to the <C> colored object?
+        if question["id"] in (13, 15, 17):
+            question["question"] = question["question"].replace("<C>", colors_code[color])
             max_distance = 0
 
-            for object in objects:
+            for _object in objects:
                 distance = math.sqrt(
-                    (object[1][0] - objects[color][1][0])**2 +
-                    (object[1][1] - objects[color][1][1])**2
+                    (_object[1][0] - objects[color][1][0]) ** 2 + \
+                    (_object[1][1] - objects[color][1][1]) ** 2
                 )
-
+                
                 if distance > max_distance:
                     max_distance = distance
-                    if question['id'] == 12:
-                        answer = object[2]
-                    elif question['id'] == 13:
-                        answer = colors_code[object[0]]
-                    elif question['id'] == 14:
-                        answer = (colors_code[objects[color][0]] == \
-                                  colors_code[object[0]])
-                    else:
-                        answer = (objects[color][2] == object[2])
+                    if question["id"] == 13:
+                        answer = colors_code[_object[0]]
+                    
+                    if question["id"] == 15:
+                        answer = _object[2]
+                        
+                    if question["id"] == 17:
+                        if _object[2] == objects[color][2]:
+                            answer = True
+                        else:
+                            answer = False
 
-        # What is the shape of the nearest object from this object?
-        # What is the color of the nearest object from this object?
-        # Is the color of the nearest object same as of this object?
-        # Are shapes of the current object and the nearest object similar?
-        if question['id'] in (16, 17, 18, 19):
-            min_distance = 100000
-            for object in objects:
-                distance = math.sqrt(
-                    (object[1][0] - objects[color][1][0]) ** 2 + \
-                    (object[1][1] - objects[color][1][1]) ** 2
-                )
-
-                if distance < min_distance:
-                    min_distance = distance
-                    if question['id'] == 16:
-                        answer = object[2]
-                    elif question['id'] == 17:
-                        answer = colors_code[object[0]]
-                    elif question['id'] == 18:
-                        answer = (colors_code[objects[color][0]] == \
-                                  colors_code[object[0]])
+        # Are there any objects on top of the <C> colored object?
+        # Are there any objects on bottom of the <C> colored object?
+        # Are there any objects on left of the <C> colored object?
+        # Are there any objects on right of the <C> colored object?
+        if question["id"] in (18, 19, 20, 21):
+            question["question"] = question["question"].replace("<C>", colors_code[color])
+            
+            for _object in objects:
+                if question["id"] == 18:
+                    if _object[1][1] < objects[color][1][1]:
+                        answer = True
+                        break
                     else:
-                        answer = (objects[color][2] == object[2])
+                        answer = False
+                
+                if question["id"] == 19:
+                    if _object[1][1] > objects[color][1][1]:
+                        answer = True
+                        break
+                    else:
+                        answer = False
+                        
+                if question["id"] == 20:
+                    if _object[1][0] < objects[color][1][0]:
+                        answer = True
+                        break
+                    else:
+                        answer = False
+                        
+                if question["id"] == 21:
+                    if _object[1][0] > objects[color][1][0]:
+                        answer = True
+                        break
+                    else:
+                        answer = False
 
         questions.append(question["question"])
         answers.append(answer)
