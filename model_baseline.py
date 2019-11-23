@@ -42,30 +42,31 @@ class Model:
             with tf.compat.v1.variable_scope(scope) as scope:
                 log.warning(scope.name)
 
-                conv_1 = Conv2D(24, kernel_size=5, strides=3,
+                conv_1 = Conv2D(32, kernel_size=5, strides=3,
                                 activation=tf.nn.relu, padding=self.padding,
                                 name='conv_1')(img)
                 bn_1 = BatchNormalization(name='bn_1')(conv_1)
-                conv_2 = Conv2D(24, kernel_size=5, strides=3,
+                conv_2 = Conv2D(64, kernel_size=5, strides=3,
                                 activation=tf.nn.relu, padding=self.padding,
                                 name='conv_2')(bn_1)
                 bn_2 = BatchNormalization(name='bn_2')(conv_2)
-                conv_3 = Conv2D(24, kernel_size=5, strides=2,
+                conv_3 = Conv2D(128, kernel_size=5, strides=2,
                                 activation=tf.nn.relu, padding=self.padding,
                                 name='conv_3')(bn_2)
                 bn_3 = BatchNormalization(name='bn_3')(conv_3)
-                conv_4 = Conv2D(24, kernel_size=5, strides=2,
+                conv_4 = Conv2D(256, kernel_size=5, strides=2,
                                 activation=tf.nn.relu, padding=self.padding,
                                 name='conv_4')(bn_3)
                 bn_4 = BatchNormalization(name='bn_4')(conv_4)
                 flat = Flatten(name='flatten')(bn_4)
                 flat = tf.keras.backend.repeat_elements(flat, 10, axis=0)
                 conv_q = tf.concat([flat, q], axis=1)
-                fc_1 = Dense(256, activation=tf.nn.relu, name='fc_1')(conv_q)
-                fc_2 = Dense(256, activation=tf.nn.relu, name='fc_2')(fc_1)
-                fc_2 = Dropout(rate=0.5)(fc_2)
-                fc_3 = Dense(self.ans_dim, activation=None, name='fc_3')(fc_2)
-                return fc_3
+                fc_1 = Dense(2000, activation=tf.nn.relu, name='fc_1')(conv_q)
+                fc_2 = Dense(1000, activation=tf.nn.relu, name='fc_2')(fc_1)
+                fc_3 = Dense(500, activation=tf.nn.relu, name='fc_3')(fc_2)
+                fc_4 = Dense(100, activation=tf.nn.relu, name='fc_4')(fc_3)
+                logits = Dense(self.ans_dim, activation=None, name='fc_3')(fc_4)
+                return logits
         
         # build loss and accuracy
         def build_loss(logits, labels):
