@@ -105,7 +105,8 @@ def build_dataset(dataset_type, count):
     answers = []
     answer = None
 
-    # randomly choose any 10 questions from the questions list
+    # randomly choose any question from the entire questions list without
+    # replacement
     with open("questions.json") as json_file:
         data = json.load(json_file)
         chosen_questions = random.sample(data["questions"], k=23)
