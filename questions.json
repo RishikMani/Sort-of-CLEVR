@@ -22,66 +22,74 @@
 			},
 			{
 			    "id": 6,
-			    "question": "How many objects have similar shape as of the <C> colored object?"
+			    "question": "Is the <C> colored object square shaped?"
 			},
 			{
 			    "id": 7,
-			    "question": "Are there more than one object of similar shape as of <C> colored object?"
+			    "question": "Is the <C> colored object circle shaped?"
 			},
 			{
 			    "id": 8,
-			    "question": "Are there more than one square in the image?"
+			    "question": "How many objects have similar shape as of the <C> colored object?"
 			},
 			{
 			    "id": 9,
-			    "question": "Are there more than one circle in the image?"
+			    "question": "Are there more than one object of similar shape as of <C> colored object?"
 			},
 			{
 			    "id": 10,
-			    "question": "How many squares are there in the image?"
+			    "question": "Are there more than one square in the image?"
 			},
 			{
 			    "id": 11,
-			    "question": "How many circles are there in the image?"
+			    "question": "Are there more than one circle in the image?"
 			},
 			{
 			    "id": 12,
-			    "question": "What is the color of the nearest object from <C> colored object?"
+			    "question": "How many squares are there in the image?"
 			},
 			{
 			    "id": 13,
-			    "question": "What is the color of the farthest object from <C> colored object?"
+			    "question": "How many circles are there in the image?"
 			},
 			{
 			    "id": 14,
-			    "question": "What is the shape of the nearest object from <C> colored object?"
+			    "question": "What is the color of the nearest object from <C> colored object?"
 			},
 			{
 			    "id": 15,
-			    "question": "What is the shape of the farthest object from <C> colored object?"
+			    "question": "What is the color of the farthest object from <C> colored object?"
 			},
 			{
 			    "id": 16,
-			    "question": "Is the shape of the nearest object similar to the <C> colored object?"
+			    "question": "What is the shape of the nearest object from <C> colored object?"
 			},
 			{
 			    "id": 17,
-			    "question": "Is the shape of the farthest object similar to the <C> colored object?"
+			    "question": "What is the shape of the farthest object from <C> colored object?"
 			},
 			{
 			    "id": 18,
-			    "question": "Are there any objects on top of the <C> colored object?"
+			    "question": "Is the shape of the nearest object similar to the <C> colored object?"
 			},
 			{
 			    "id": 19,
-			    "question": "Are there any objects on bottom of the <C> colored object?"
+			    "question": "Is the shape of the farthest object similar to the <C> colored object?"
 			},
 			{
 			    "id": 20,
-			    "question": "Are there any objects on left of the <C> colored object?"
+			    "question": "Are there any objects on top of the <C> colored object?"
 			},
 			{
 			    "id": 21,
+			    "question": "Are there any objects on bottom of the <C> colored object?"
+			},
+			{
+			    "id": 22,
+			    "question": "Are there any objects on left of the <C> colored object?"
+			},
+			{
+			    "id": 23,
 			    "question": "Are there any objects on right of the <C> colored object?"
 			}
 		]

@@ -9,11 +9,11 @@ Special tokens that are in all dictionaries:
 """
 
 SPECIAL_TOKENS = {
-    '<NULL>': 0,
-    '<START>': 1,
-    '<END>': 2,
-    '<UNK>': 3,
-    '<PAD>': 4
+    "<NULL>": 0,
+    "<START>": 1,
+    "<END>": 2,
+    "<UNK>": 3,
+    "<PAD>": 4
 }
 
 
@@ -35,22 +35,22 @@ def tokenize(s, delim=' ', add_start_token=True, add_end_token=True,
     """
     if punct_to_keep is not None:
         for p in punct_to_keep:
-            s = s.replace(p, '%s%s' % (delim, p))
+            s = s.replace(p, "%s%s" % (delim, p))
 
     if punct_to_remove is not None:
         for p in punct_to_remove:
-            s = s.replace(p, '')
+            s = s.replace(p, "")
 
     tokens = s.split(delim)
     if add_start_token:
-        tokens.insert(0, '<START>')
+        tokens.insert(0, "<START>")
     if add_end_token:
-        tokens.append('<END>')
+        tokens.append("<END>")
 
     return tokens
 
 
-def build_vocab(sequences, min_token_count=1, delim=' ', punct_to_keep=None,
+def build_vocab(sequences, min_token_count=1, delim=" ", punct_to_keep=None,
                 punct_to_remove=None):
     """
 
@@ -65,9 +65,9 @@ def build_vocab(sequences, min_token_count=1, delim=' ', punct_to_keep=None,
 
     token_to_count = {}
     tokenize_kwargs = {
-        'delim': delim,
-        'punct_to_keep': punct_to_keep,
-        'punct_to_remove': punct_to_remove,
+        "delim": delim,
+        "punct_to_keep": punct_to_keep,
+        "punct_to_remove": punct_to_remove,
     }
 
     for seq in sequences:
@@ -101,9 +101,9 @@ def encode(seq_tokens, token_to_idx, allow_unk=False):
     for token in seq_tokens:
         if token not in token_to_idx:
             if allow_unk:
-                token = '<UNK>'
+                token = "<UNK>"
             else:
-                raise KeyError('Token "%s" not in vocab' % token)
+                raise KeyError("Token '%s' not in vocab" % token)
         seq_idx.append((token_to_idx[token]))
 
     return seq_idx

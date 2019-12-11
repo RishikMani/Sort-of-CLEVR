@@ -15,25 +15,25 @@ formatter = ColoredFormatter(
     datefmt=None,
     reset=True,
     log_colors={
-        'DEBUG':    'cyan',
-        'INFO':     'white,bold',
-        'INFOV':    'cyan,bold',
-        'WARNING':  'yellow',
-        'ERROR':    'red,bold',
-        'CRITICAL': 'red,bg_white',
+        "DEBUG":    "cyan",
+        "INFO":     "white,bold",
+        "INFOV":    "cyan,bold",
+        "WARNING":  "yellow",
+        "ERROR":    "red,bold",
+        "CRITICAL": "red,bg_white",
     },
     secondary_log_colors={},
-    style='%'
+    style="%"
 )
 ch.setFormatter(formatter)
 
-log = logging.getLogger('rn')
+log = logging.getLogger("rn")
 log.setLevel(logging.DEBUG)
 log.handlers = []       # No duplicated handlers
 log.propagate = False   # workaround for duplicated logs in ipython
 log.addHandler(ch)
 
-logging.addLevelName(logging.INFO + 1, 'INFOV')
+logging.addLevelName(logging.INFO + 1, "INFOV")
 
 
 def _infov(self, msg, *args, **kwargs):
