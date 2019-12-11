@@ -1,16 +1,17 @@
 import os
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 import json
 import cv2
 import numpy as np
 import h5py
 import argparse
 import time
-import tensorflow as tf
-
-from tensorflow.data import Dataset
-from tensorflow.keras.utils import to_categorical
-from tensorflow.core.protobuf import rewriter_config_pb2
+import warnings
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=FutureWarning)
+    import tensorflow as tf
+    from tensorflow.data import Dataset
+    from tensorflow.keras.utils import to_categorical
+    from tensorflow.core.protobuf import rewriter_config_pb2
 
 from util import log
 
@@ -34,11 +35,11 @@ parser.add_argument('--kernel_size', type=int, default=5)
 parser.add_argument('--strides', type=int, default=3)
 parser.add_argument('--padding', type=str, default='same')
 
-parser.add_argument('--batch_size', type=int, default=64)
-parser.add_argument('--iterations', type=int, default=500)
+parser.add_argument('--batch_size', type=int, default=50)
+parser.add_argument('--iterations', type=int, default=400)
 parser.add_argument('--learning_rate', type=float, default=1e-4)
 parser.add_argument('--lr_weight_decay', type=bool, default=False)
-parser.add_argument('--output_save_step', type=int, default=50)
+parser.add_argument('--output_save_step', type=int, default=10)
 
 parser.add_argument('--model', type=str, default='rn',
                     choices=['rn', 'baseline'])
@@ -60,30 +61,33 @@ class Trainer:
         self.config = config
         self.iterations = config.iterations
         self.output_save_step = config.output_save_step
-
-        self.train_dir = './train_dir/%s-%s' % (
-            config.model,
-            time.strftime("%Y%m%d-%H%M%S")
-        )
-        if not os.path.exists(self.train_dir):
-            os.makedirs(self.train_dir)
-
-        log.infov("Train Dir: %s", self.train_dir)
-
+        
+        tf.set_random_seed(20)
         # Clears the default graph stack and resets the global default
         # graph.
         tf.compat.v1.reset_default_graph()
-
-        Model = self.get_model_class(config.model)
-        # Create the model
-        self.model = Model(config)
         
-        # Returns and create (if necessary) the global step tensor.
-        # global_step refers to the number of batches seen by the graph
-        # https://bit.ly/2AAqjs1 offers good explanation for global step
-        self.global_step = tf.compat.v1.train.get_or_create_global_step()
+        self.session_config = tf.compat.v1.ConfigProto(
+            allow_soft_placement=True,
+            gpu_options=tf.compat.v1.GPUOptions(allow_growth=True),
+            device_count={'GPU': 1},
+        )
         
+        if config.checkpoint is not None:
+            self.checkpoint = config.checkpoint
+            log.info("Checkpoint path is: %s", self.checkpoint)
+            self.graph = tf.compat.v1.get_default_graph()
+            self.global_step = tf.compat.v1.train.get_or_create_global_step(graph=self.graph)
+        else:
+            # Global step: it is the count of how many batches have been processed
+            self.global_step = tf.compat.v1.train.get_or_create_global_step()
+            
         self.learning_rate = config.learning_rate
+
+		# Create model
+        Model = self.get_model_class(config.model)
+        self.model = Model(config)
+
         if config.lr_weight_decay:
             self.learning_rate = tf.train.exponential_decay(
                 self.learning_rate,
@@ -93,8 +97,8 @@ class Trainer:
                 staircase=True,
                 name='decaying_learning_rate'
             )
-        
-        # Optimizer
+			
+		# Optimizer
         self.optimizer = tf.contrib.layers.optimize_loss(
             loss=self.model.loss,
             global_step=self.global_step,
@@ -104,18 +108,24 @@ class Trainer:
             name='optimizer_loss'
         )
         
+        if config.checkpoint is None:
+            self.train_dir = './train_dir/%s-%s' % (
+                config.model,
+                time.strftime("%Y%m%d-%H%M%S")
+            )
+            if not os.path.exists(self.train_dir):
+                os.makedirs(self.train_dir)
+            log.infov("Train Dir: %s", self.train_dir)
+        else:
+            self.train_dir = self.checkpoint
+            
         self.summary_op = tf.compat.v1.summary.merge_all()
         try:
             import tfplot
-            self.plot_summary_op = tf.compat.v1.summary.merge_all(tf.get_collection(key='plot_summaries'))
+            self.plot_summary_op = tf.compat.v1.summary.merge_all(tf.compat.v1.get_collection(key='plot_summaries'))
         except:
             pass
 
-        self.session_config = tf.compat.v1.ConfigProto(
-            allow_soft_placement=True,
-            gpu_options=tf.compat.v1.GPUOptions(allow_growth=True),
-            device_count={'GPU': 1},
-        )
         off = rewriter_config_pb2.RewriterConfig.OFF
         self.session_config.graph_options.rewrite_options.arithmetic_optimization = off
         
@@ -140,10 +150,10 @@ class Trainer:
             self.config.batch_size
         )
         dataset_ques = Dataset.from_tensor_slices((questions)).batch(
-            self.config.batch_size * 10
+            self.config.batch_size * 23
         )
         dataset_ans = Dataset.from_tensor_slices((answers)).batch(
-            self.config.batch_size * 10
+            self.config.batch_size * 23
         )
         
         # Create iterators to iterate over the different batches
@@ -165,6 +175,8 @@ class Trainer:
             # and events to it.
             self.summary_writer = tf.compat.v1.summary.FileWriter(self.train_dir)
             saver = tf.compat.v1.train.Saver(max_to_keep=1)
+            if self.config.checkpoint is not None:
+                saver.restore(sess, tf.compat.v1.train.latest_checkpoint(self.checkpoint))
 
             batches = images.shape[0] // self.config.batch_size
             log.infov('Training starts')
@@ -177,14 +189,11 @@ class Trainer:
                 sess.run(iterator_ans.initializer)
 
                 for batch in range(batches):
-                    batch_images = []
                     batch_img = sess.run(
                         next_image_batch,
                         feed_dict={img_placeholder: images}
                     )
-                    for j in range(batch_img.shape[0]):
-                        for _ in range(10):
-                            batch_images.append(batch_img[j])
+					
                     batch_ques = sess.run(next_question_batch)
                     batch_ans = sess.run(next_answer_batch)
                     batch_ans = to_categorical(
@@ -196,8 +205,7 @@ class Trainer:
                     step, acc, loss, summary =\
                         self.run_single_epoch(
                             sess,
-                            batch_images,
-                            # batch_img,
+                            batch_img,
                             batch_ques,
                             batch_ans,
                             epoch
@@ -207,7 +215,7 @@ class Trainer:
                         self.log_step_message(step, acc, loss)
                     self.summary_writer.add_summary(summary, global_step=epoch)
 
-                if epoch % (self.output_save_step -1) == 0 or epoch % 499 == 0:
+                if epoch % self.output_save_step == 0:
                     log.infov("Saved checkpoint at %s", self.train_dir)
                     save_path = saver.save(
                         sess,
