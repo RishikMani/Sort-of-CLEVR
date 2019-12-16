@@ -1,9 +1,11 @@
 import tensorflow as tf
 
 from util import log
-
-from tensorflow.keras.layers import Dense, BatchNormalization
-from tensorflow.keras.layers import Flatten, Conv2D
+import warnings
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=FutureWarning)
+    from tensorflow.keras.layers import Dense, BatchNormalization
+    from tensorflow.keras.layers import Flatten, Conv2D
 
 
 class Model:
@@ -72,7 +74,7 @@ class Model:
         # build loss and accuracy
         def build_loss(logits, labels):
             # Cross-entropy loss
-            loss = tf.nn.softmax_cross_entropy_with_logits(
+            loss = tf.nn.softmax_cross_entropy_with_logits_v2(
                 logits=logits,
                 labels=labels
             )

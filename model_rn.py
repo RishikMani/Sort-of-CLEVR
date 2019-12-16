@@ -1,7 +1,9 @@
 import tensorflow as tf
-
-from tensorflow.keras.layers import Embedding, LSTM, Dense
-from tensorflow.keras.layers import Dropout, Conv2D, BatchNormalization
+import warnings
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=FutureWarning)
+    from tensorflow.keras.layers import Embedding, LSTM, Dense
+    from tensorflow.keras.layers import Dropout, Conv2D, BatchNormalization
 
 from util import log
 

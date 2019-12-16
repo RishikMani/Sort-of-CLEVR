@@ -44,8 +44,8 @@ parser.add_argument("--strides", type=int, default=3, help="Stride value")
 parser.add_argument("--padding", type=str, default="same",
                     help="Type of padding in convolution")
 
-parser.add_argument("--batch_size", type=int, default=50)
-parser.add_argument("--model", type=str, default="rn",
+parser.add_argument("--batch_size", type=int, default=10)
+parser.add_argument("--model", type=str, default="baseline",
                     choices=["rn", "baseline"], help="Type of the model")
 parser.add_argument("--checkpoint_path",
                     default="./train_dir/rn-20191126-114955/model-37179",
@@ -126,8 +126,6 @@ class Evaler:
         # destroy the current TF graph and create a new one
         tf.keras.backend.clear_session()
 
-        testing_accuracy = 0
-
         with self.session as sess:
             sess.run(tf.compat.v1.global_variables_initializer())
 
@@ -136,11 +134,14 @@ class Evaler:
                 log.info("Model checkpoint has been successfully restored.")
             except Exception as e:
                 log.info("Model checkpoint failed to restore.")
+                print(e)
 
             # initialize all the dataset iterators
             sess.run(iterator_img.initializer)
             sess.run(iterator_ques.initializer)
             sess.run(iterator_ans.initializer)
+
+            testing_accuracy = 0
 
             for _ in range(max_steps):
                 # fetch batches to be processed in the current step
@@ -164,15 +165,18 @@ class Evaler:
         [accuracy, all_preds, all_targets] = session.run(
             [self.model.accuracy, self.model.all_preds, self.model.ans],
             feed_dict={
-                'image_1:0': images,
-                'question_1:0': ques,
-                'answer_1:0': ans
+                'img_1:0': images,
+                'ques_1:0': ques,
+                'ans_1:0': ans
             }
         )
-        """
         for i in range(all_preds.shape[0]):
-            print('Target {}, Predicted: {}'.format(vocab['answer_idx_to_token'][str(np.argmax(all_targets[i]))], vocab['answer_idx_to_token'][str(np.argmax(all_preds[i]))]))
-        """
+            print(
+                'Target {}, Predicted: {}'.format(
+                    vocab['answer_idx_to_token'][str(np.argmax(all_targets[i]))],
+                    vocab['answer_idx_to_token'][str(np.argmax(all_preds[i]))]
+                    )
+                )
         return accuracy, all_preds, all_targets        
 
 
