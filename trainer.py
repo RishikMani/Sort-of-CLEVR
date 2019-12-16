@@ -9,6 +9,8 @@ import warnings
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=FutureWarning)
     import tensorflow as tf
+    import tensorflow.python.util.deprecation as deprecation
+    deprecation._PRINT_DEPRECATION_WARNINGS = False
     from tensorflow.data import Dataset
     from tensorflow.keras.utils import to_categorical
     from tensorflow.core.protobuf import rewriter_config_pb2
@@ -41,7 +43,7 @@ parser.add_argument('--learning_rate', type=float, default=1e-4)
 parser.add_argument('--lr_weight_decay', type=bool, default=False)
 parser.add_argument('--output_save_step', type=int, default=10)
 
-parser.add_argument('--model', type=str, default='rn',
+parser.add_argument('--model', type=str, default='baseline',
                     choices=['rn', 'baseline'])
 parser.add_argument('--checkpoint', default=None)
 
@@ -62,7 +64,7 @@ class Trainer:
         self.iterations = config.iterations
         self.output_save_step = config.output_save_step
         
-        tf.set_random_seed(20)
+        tf.compat.v1.set_random_seed(20)
         # Clears the default graph stack and resets the global default
         # graph.
         tf.compat.v1.reset_default_graph()
@@ -122,7 +124,9 @@ class Trainer:
         self.summary_op = tf.compat.v1.summary.merge_all()
         try:
             import tfplot
-            self.plot_summary_op = tf.compat.v1.summary.merge_all(tf.compat.v1.get_collection(key='plot_summaries'))
+            self.plot_summary_op = tf.compat.v1.summary.merge_all(
+                    tf.compat.v1.get_collection(key='plot_summaries')
+                )
         except:
             pass
 
@@ -176,7 +180,22 @@ class Trainer:
             self.summary_writer = tf.compat.v1.summary.FileWriter(self.train_dir)
             saver = tf.compat.v1.train.Saver(max_to_keep=1)
             if self.config.checkpoint is not None:
-                saver.restore(sess, tf.compat.v1.train.latest_checkpoint(self.checkpoint))
+                """
+                Re-enable this code if you get any errors related to old
+                checkpoint deletion, and delete the rest of the ckpt
+                related code.
+
+                saver.restore(
+                    sess,
+                    tf.compat.v1.train.latest_checkpoint(self.checkpoint)
+                )
+                """
+
+                # earlier while resuming model from a checkpoint, old
+                # checkpoints were not removed
+                ckpt = tf.train.get_checkpoint_state(self.checkpoint)
+                saver.restore(sess, ckpt.model_checkpoint_path)
+                saver.recover_last_checkpoints(ckpt.all_model_checkpoint_paths)
 
             batches = images.shape[0] // self.config.batch_size
             log.infov('Training starts')
@@ -215,12 +234,20 @@ class Trainer:
                         self.log_step_message(step, acc, loss)
                     self.summary_writer.add_summary(summary, global_step=epoch)
 
-                if epoch % self.output_save_step == 0:
-                    log.infov("Saved checkpoint at %s", self.train_dir)
-                    save_path = saver.save(
-                        sess,
-                        os.path.join(self.train_dir, 'model'),
-                        global_step=step)
+                if (epoch + 1) % self.output_save_step == 0:
+                    try:
+                        save_path = saver.save(
+                            sess,
+                            os.path.join(self.train_dir, 'model'),
+                            global_step=step
+                        )
+                        log.infov("Saved checkpoint at %s", self.train_dir)
+                    except Exception as ex:
+                        log.warning(
+                            "An exception occurred while saving the "
+                            "checkpoint"
+                        )
+                        log.info("Continuing the model training!")
                     
     def run_single_epoch(self, sess, images, questions, answers, step):
         """
