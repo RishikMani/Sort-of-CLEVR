@@ -1,8 +1,8 @@
 # Sort-of-CLEVR
-Tensorflow implementations of Relational Networks and a VQA dataset named Sort-of-CLEVR proposed by DeepMind. In addition to the original approach, few custom questions, both relational and non-relational have also been used.
+Tensorflow implementation of Relation Networks and a VQA dataset named Sort-of-CLEVR proposed by DeepMind. In addition to the original approach, few custom questions, both relational and non-relational have also been used.
 
 ## Description
-This project includes a [Tensorflow](https://www.tensorflow.org/) implementation of **Relation Networks** and a dataset generator which generates a synthetic VQA dataset named **Sort-of-CLEVR** proposed in the paper [A Simple Neural Network Module for Relational Reasoning](https://arxiv.org/abs/1706.01427).
+This project includes a [Tensorflow](https://www.tensorflow.org/) implementation of **Relation Networks** and a dataset generator which generates a synthetic VQA dataset named **Sort-of-CLEVR** proposed in the paper [A Simple Neural Network Module for Relational Reasoning](https://arxiv.org/abs/1706.01427). The dataset consists of non-relational and relational questions. In case of natural language questions, the network has been augmented with LSTM to generate question embeddings. When the network is not augmented with LSTM, questions are hard encoded as one-hot-encoded questions.
 
 ### Relation Networks
 
@@ -12,13 +12,13 @@ Relational reasoning is an essential component of intelligent systems. To this e
     <img src="figure/rn_eq.png" height="72" />
 </p>
 
-where *o* represents inidividual object while *f* and *g* are functions dealing with relational reasoning which are implemented as MLPs. Note that objects mentioned here are not necessary to be real objects; instead, they could consist of the background, particular physical objects, textures, conjunctions of physical objects, etc. In the implementation, objects are defined by convoluted features. The model architecture proposed to solve Visual Question Answering (VQA) problems is as follows.
+where *o* represents individual object while *f* and *g* are functions dealing with relational reasoning which are implemented as MLPs. Note that objects mentioned here are not necessary to be real objects; instead, they could consist of background, particular physical objects, textures, conjunctions of physical objects, etc. In the implementation, objects are defined by convoluted features. The model architecture proposed to solve Visual Question Answering (VQA) problems is as follows:
 
 <p align="center">
     <img src="figure/RN.png" height="350" />
 </p>
 
-In addition to the RN model, **a baseline model** which consists of convolutional layers followed by MLPs is also provided in this implementation.
+In addition to the RN model, a **baseline model** which consists of convolutional layers followed by MLPs is also provided in this implementation.
 
 ### Sort-of-CLEVR
 
